@@ -5,10 +5,11 @@ using Rogue.Contacts.Service.Errors;
 using Rogue.Contacts.Service.Interfaces;
 using Rogue.Contacts.View.Model;
 
-namespace Rogue.Contacts.WebAPI.Controllers;
+namespace Rogue.Contacts.WebAPI.Controllers.V1;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[ApiVersion("1.0")]
 public sealed class UserController : Controller
 {
     private readonly IUserService userService;
@@ -23,19 +24,19 @@ public sealed class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> RegisterAsync([FromBody] UserRegisterRequestDto model, CancellationToken ct = default)
     {
-        var registerResult = await this.userService.RegisterAsync(model, ct);
+        var registerResult = await userService.RegisterAsync(model, ct);
 
         if (!registerResult.IsSuccess)
         {
             return registerResult.Error switch
             {
-                AggregateError<ArgumentInvalidError> error => this.StatusCode(400, error),
-                AggregateError<ArgumentConflictError> error => this.Conflict(error),
-                _ => this.StatusCode(500),
+                AggregateError<ArgumentInvalidError> error => StatusCode(400, error),
+                AggregateError<ArgumentConflictError> error => Conflict(error),
+                _ => StatusCode(500),
             };
         }
 
-        return this.Ok(registerResult.Entity);
+        return Ok(registerResult.Entity);
     }
 
     [AllowAnonymous]
@@ -43,17 +44,17 @@ public sealed class UserController : Controller
     [HttpPost]
     public async Task<IActionResult> LoginAsync([FromBody] UserLoginRequestDto model, CancellationToken ct = default)
     {
-        var loginResult = await this.userService.LoginAsync(model, ct);
+        var loginResult = await userService.LoginAsync(model, ct);
 
         if (!loginResult.IsSuccess)
         {
             return loginResult.Error switch
             {
-                AggregateError<ArgumentInvalidError> error => this.Unauthorized(error),
-                _ => this.StatusCode(500),
+                AggregateError<ArgumentInvalidError> error => Unauthorized(error),
+                _ => StatusCode(500),
             };
         }
 
-        return this.Ok(loginResult.Entity);
+        return Ok(loginResult.Entity);
     }
 }

@@ -1,3 +1,3 @@
 ﻿namespace Rogue.Contacts.View.Model;
 
-public sealed record DeleteBusinessRequestDto(string Name);
+public sealed record DeleteBusinessRequestDto(string Owner, string Business);

@@ -6,9 +6,13 @@ namespace Rogue.Contacts.Service.Interfaces;
 
 public interface IBusinessService
 {
-    Task<Result<Business>> CreateBusinessAsync(CreateBusinessRequestDto createBusinessModel, CancellationToken ct);
+    Task<Result<BusinessDto>> CreateBusinessAsync(CreateBusinessRequestDto createBusinessModel, CancellationToken ct);
 
     Task<Result<BusinessDto>> GetBusinessAsync(GetBusinessRequestDto getBusinessModel, CancellationToken ct);
+
+    Task<Result> CreateRoleAsync(CreateRoleRequestDto createRoleModel, CancellationToken ct);
+
+    Task<Result> AddPermissionsToRole(AddPermissionsToRoleRequestDto addPermissionToRoleModel, CancellationToken ct);
 
     Task<Result> DeleteBusinessAsync(DeleteBusinessRequestDto deleteBusinessModel, CancellationToken ct);
 }

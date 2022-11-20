@@ -1,4 +1,6 @@
-﻿namespace Rogue.Contacts.View.Model;
+﻿using System.Text.Json.Serialization;
+
+namespace Rogue.Contacts.View.Model;
 
 public sealed record GetBusinessRequestDto
 {
@@ -7,7 +9,8 @@ public sealed record GetBusinessRequestDto
         BusinessId = businessId;
     }
 
-    public GetBusinessRequestDto(string ownerUsername, string businessName)
+    [JsonConstructor]
+    public GetBusinessRequestDto(string? ownerUsername, string? businessName)
     {
         OwnerUsername = ownerUsername;
         BusinessName = businessName;

@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using Rogue.Contacts.Data.Model;
 
@@ -8,6 +10,11 @@ public sealed class MongoContext
 {
     public MongoContext(IConfiguration configuration)
     {
+        var pack = new ConventionPack
+        {
+            new EnumRepresentationConvention(BsonType.String),
+        };
+        ConventionRegistry.Register("EnumStringConversion", pack, t => true);
         Client = new MongoClient(configuration.GetConnectionString("RogueContacts"));
     }
 

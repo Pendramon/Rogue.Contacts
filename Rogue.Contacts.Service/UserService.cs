@@ -124,6 +124,7 @@ public class UserService : IUserService
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             }),
 
+            // TODO: Change expiration when refresh tokens are implemented.
             Expires = now.AddDays(7),
 
             SigningCredentials = new SigningCredentials(

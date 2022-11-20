@@ -7,6 +7,6 @@ public sealed class CreateBusinessModelValidator : AbstractValidator<CreateBusin
 {
     public CreateBusinessModelValidator()
     {
-        RuleFor(m => m.Name).NotEmpty().MaximumLength(255);
+        RuleFor(m => m.BusinessName).NotEmpty().MaximumLength(255);
     }
 }

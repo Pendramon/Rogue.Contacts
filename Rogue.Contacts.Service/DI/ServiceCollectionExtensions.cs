@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<UserLoginRequestDto>, UserLoginModelValidator>();
         services.AddScoped<IValidator<CreateBusinessRequestDto>, CreateBusinessModelValidator>();
         services.AddScoped<IValidator<GetBusinessRequestDto>, GetBusinessModelValidator>();
+        services.AddScoped<IValidator<CreateRoleRequestDto>, CreateRoleModelValidator>();
+        services.AddScoped<IValidator<AddPermissionsToRoleRequestDto>, AddPermissionsToRoleModelValidator>();
         services.AddScoped<IValidator<DeleteBusinessRequestDto>, DeleteBusinessModelValidator>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IBusinessService, BusinessService>();
