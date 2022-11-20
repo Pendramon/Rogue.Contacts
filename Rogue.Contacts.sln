@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32901.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rogue.Contacts", "Rogue.Contacts\Rogue.Contacts.csproj", "{CA5C78D1-9912-43A3-A4DB-EA29EECB18F5}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rogue.Contacts.WebAPI", "Rogue.Contacts.WebAPI\Rogue.Contacts.WebAPI.csproj", "{ACDF8288-D945-40F6-9339-D10DF742BB2E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rogue.Contacts.View.Model", "Rogue.Contact.View.Model\Rogue.Contacts.View.Model.csproj", "{8205CCC5-98F8-4315-9F8E-EE55E0F681FB}"
@@ -26,10 +24,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CA5C78D1-9912-43A3-A4DB-EA29EECB18F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA5C78D1-9912-43A3-A4DB-EA29EECB18F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA5C78D1-9912-43A3-A4DB-EA29EECB18F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA5C78D1-9912-43A3-A4DB-EA29EECB18F5}.Release|Any CPU.Build.0 = Release|Any CPU
 		{ACDF8288-D945-40F6-9339-D10DF742BB2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ACDF8288-D945-40F6-9339-D10DF742BB2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACDF8288-D945-40F6-9339-D10DF742BB2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
