@@ -35,7 +35,7 @@ public sealed class ConfigureSwaggerOptions
     private static OpenApiInfo CreateVersionInfo(
         ApiVersionDescription description)
     {
-        var info = new OpenApiInfo()
+        var info = new OpenApiInfo
         {
             Title = "Rogue Contacts Web API",
             Version = description.ApiVersion.ToString(),

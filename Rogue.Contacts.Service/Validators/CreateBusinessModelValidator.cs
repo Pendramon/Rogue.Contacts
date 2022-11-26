@@ -3,10 +3,10 @@ using Rogue.Contacts.View.Model;
 
 namespace Rogue.Contacts.Service.Validators;
 
-public sealed class CreateBusinessModelValidator : AbstractValidator<CreateBusinessRequestDto>
+public sealed class CreateBusinessModelValidator : AbstractValidator<CreateBusinessDto>
 {
     public CreateBusinessModelValidator()
     {
-        RuleFor(m => m.BusinessName).NotEmpty().MaximumLength(255);
+        RuleFor(m => m.Name).NotEmpty().BusinessName();
     }
 }

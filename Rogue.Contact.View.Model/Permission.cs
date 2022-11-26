@@ -1,4 +1,4 @@
-﻿namespace Rogue.Contacts.Shared.Models;
+﻿namespace Rogue.Contacts.View.Model;
 
 public enum Permission
 {

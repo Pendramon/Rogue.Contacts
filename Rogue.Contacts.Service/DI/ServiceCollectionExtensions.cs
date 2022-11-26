@@ -16,13 +16,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<MongoContext>();
         services.AddTransient<IHashFunction, BCryptFunction>();
         services.AddSingleton<IHashService, HashService>();
-        services.AddScoped<IValidator<UserRegisterRequestDto>, UserRegisterModelValidator>();
-        services.AddScoped<IValidator<UserLoginRequestDto>, UserLoginModelValidator>();
-        services.AddScoped<IValidator<CreateBusinessRequestDto>, CreateBusinessModelValidator>();
-        services.AddScoped<IValidator<GetBusinessRequestDto>, GetBusinessModelValidator>();
-        services.AddScoped<IValidator<CreateRoleRequestDto>, CreateRoleModelValidator>();
-        services.AddScoped<IValidator<AddPermissionsToRoleRequestDto>, AddPermissionsToRoleModelValidator>();
-        services.AddScoped<IValidator<DeleteBusinessRequestDto>, DeleteBusinessModelValidator>();
+        services.AddScoped<IValidator<UserRegisterDto>, UserRegisterModelValidator>();
+        services.AddScoped<IValidator<UserLoginDto>, UserLoginModelValidator>();
+        services.AddScoped<IValidator<CreateBusinessDto>, CreateBusinessModelValidator>();
+        services.AddScoped<IValidator<GetBusinessDto>, GetBusinessModelValidator>();
+        services.AddScoped<IValidator<CreateRoleDto>, CreateRoleModelValidator>();
+        services.AddScoped<IValidator<UpdateRoleDto>, UpdateRoleModelValidator>();
+        services.AddScoped<IValidator<DeleteRoleDto>, DeleteRoleModelValidator>();
+        services.AddScoped<IValidator<DeleteBusinessDto>, DeleteBusinessModelValidator>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IBusinessService, BusinessService>();
 

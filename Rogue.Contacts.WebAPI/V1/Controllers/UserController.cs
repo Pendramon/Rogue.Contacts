@@ -5,7 +5,7 @@ using Rogue.Contacts.Service.Errors;
 using Rogue.Contacts.Service.Interfaces;
 using Rogue.Contacts.View.Model;
 
-namespace Rogue.Contacts.WebAPI.Controllers.V1;
+namespace Rogue.Contacts.WebAPI.V1.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]")]
@@ -22,7 +22,7 @@ public sealed class UserController : Controller
     [AllowAnonymous]
     [Route("register")]
     [HttpPost]
-    public async Task<IActionResult> RegisterAsync([FromBody] UserRegisterRequestDto model, CancellationToken ct = default)
+    public async Task<IActionResult> RegisterAsync([FromBody] UserRegisterDto model, CancellationToken ct = default)
     {
         var registerResult = await userService.RegisterAsync(model, ct);
 
@@ -42,7 +42,7 @@ public sealed class UserController : Controller
     [AllowAnonymous]
     [Route("login")]
     [HttpPost]
-    public async Task<IActionResult> LoginAsync([FromBody] UserLoginRequestDto model, CancellationToken ct = default)
+    public async Task<IActionResult> LoginAsync([FromBody] UserLoginDto model, CancellationToken ct = default)
     {
         var loginResult = await userService.LoginAsync(model, ct);
 

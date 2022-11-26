@@ -2,6 +2,7 @@
 using Remora.Results;
 
 namespace Rogue.Contacts.Service.Errors;
+
 /// <summary>
 /// Represents a set of errors produced by an operation.
 /// </summary>

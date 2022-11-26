@@ -4,8 +4,9 @@ using Remora.Results;
 using Rogue.Contacts.Service.Errors;
 using Rogue.Contacts.Service.Interfaces;
 using Rogue.Contacts.View.Model;
+using Rogue.Contacts.WebAPI.V1.Models;
 
-namespace Rogue.Contacts.WebAPI.Controllers.V1;
+namespace Rogue.Contacts.WebAPI.V1.Controllers;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]es")]
@@ -21,7 +22,7 @@ public sealed class BusinessController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateBusinessAsync(CreateBusinessRequestDto createBusinessModel, CancellationToken ct)
+    public async Task<IActionResult> CreateBusinessAsync(CreateBusinessDto createBusinessModel, CancellationToken ct)
     {
         var createBusinessResult = await businessService.CreateBusinessAsync(createBusinessModel, ct);
 
@@ -35,7 +36,7 @@ public sealed class BusinessController : ControllerBase
             };
         }
 
-        return Created($"{Request.Path.Value}/{createBusinessResult.Entity.OwnerUsername}/{createBusinessResult.Entity.Name}", createBusinessResult.Entity);
+        return Created($"{Request.Path.Value}/{createBusinessResult.Entity.Owner}/{createBusinessResult.Entity.Name}", createBusinessResult.Entity);
     }
 
     [HttpGet]
@@ -43,7 +44,7 @@ public sealed class BusinessController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetBusinessAsync(string owner, string business, CancellationToken ct)
     {
-        var getBusinessResult = await businessService.GetBusinessAsync(new GetBusinessRequestDto(owner, business), ct);
+        var getBusinessResult = await businessService.GetBusinessAsync(new GetBusinessDto(owner, business), ct);
 
         if (!getBusinessResult.IsSuccess)
         {
@@ -59,13 +60,12 @@ public sealed class BusinessController : ControllerBase
         return Ok(getBusinessResult.Entity);
     }
 
-    // TODO: Make all request bodies consistent.
     [HttpPost]
     [Route("{owner}/{business}/roles")]
     [Authorize]
-    public async Task<IActionResult> CreateRoleAsync(string owner, string business, [FromBody] string roleName, CancellationToken ct)
+    public async Task<IActionResult> CreateRoleAsync(string owner, string business, [FromBody] CreateRoleRequestDto model, CancellationToken ct)
     {
-        var createRoleResult = await businessService.CreateRoleAsync(new CreateRoleRequestDto(owner, business, roleName), ct);
+        var createRoleResult = await businessService.CreateRoleAsync(new CreateRoleDto(owner, business, model.Name, model.Permissions), ct);
 
         if (!createRoleResult.IsSuccess)
         {
@@ -78,15 +78,15 @@ public sealed class BusinessController : ControllerBase
             };
         }
 
-        return Ok();
+        return StatusCode(201, createRoleResult.Entity);
     }
 
     [HttpPatch]
-    [Route("{owner}/{business}/roles/{role}")]
+    [Route("{owner}/{business}/roles/{roleId}")]
     [Authorize]
-    public async Task<IActionResult> AddPermissionToRoleAsync(string owner, string business, string role, [FromBody] IEnumerable<string> permissions, CancellationToken ct)
+    public async Task<IActionResult> UpdateRoleAsync(string owner, string business, string roleId, [FromBody] UpdateRoleRequestDto model, CancellationToken ct)
     {
-        var addPermissionsResult = await businessService.AddPermissionsToRole(new AddPermissionsToRoleRequestDto(owner, business, role, permissions), ct);
+        var addPermissionsResult = await businessService.UpdateRoleAsync(new UpdateRoleDto(owner, business, roleId, model.Name, model.Permissions), ct);
 
         if (!addPermissionsResult.IsSuccess)
         {
@@ -98,7 +98,27 @@ public sealed class BusinessController : ControllerBase
             };
         }
 
-        return Ok();
+        return Ok(addPermissionsResult.Entity);
+    }
+
+    [HttpDelete]
+    [Route("{owner}/{business}/roles/{roleId}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteRoleAsync(string owner, string business, string roleId, CancellationToken ct)
+    {
+        var deleteResult = await businessService.DeleteRoleAsync(new DeleteRoleDto(owner, business, roleId), ct);
+
+        if (!deleteResult.IsSuccess)
+        {
+            return deleteResult.Error switch
+            {
+                AggregateError<ArgumentInvalidError> error => BadRequest(error),
+                NotFoundError error => NotFound(error),
+                _ => StatusCode(500),
+            };
+        }
+
+        return NoContent();
     }
 
     [HttpDelete]
@@ -106,7 +126,7 @@ public sealed class BusinessController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteBusinessAsync(string owner, string business, CancellationToken ct)
     {
-        var deleteResult = await businessService.DeleteBusinessAsync(new DeleteBusinessRequestDto(owner, business), ct);
+        var deleteResult = await businessService.DeleteBusinessAsync(new DeleteBusinessDto(owner, business), ct);
 
         if (!deleteResult.IsSuccess)
         {

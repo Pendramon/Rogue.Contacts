@@ -14,7 +14,7 @@ public sealed class MongoContext
         {
             new EnumRepresentationConvention(BsonType.String),
         };
-        ConventionRegistry.Register("EnumStringConversion", pack, t => true);
+        ConventionRegistry.Register("EnumStringConversion", pack, _ => true);
         Client = new MongoClient(configuration.GetConnectionString("RogueContacts"));
     }
 

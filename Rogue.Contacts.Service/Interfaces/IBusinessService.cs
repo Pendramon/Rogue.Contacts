@@ -1,18 +1,19 @@
 ﻿using Remora.Results;
-using Rogue.Contacts.Data.Model;
 using Rogue.Contacts.View.Model;
 
 namespace Rogue.Contacts.Service.Interfaces;
 
 public interface IBusinessService
 {
-    Task<Result<BusinessDto>> CreateBusinessAsync(CreateBusinessRequestDto createBusinessModel, CancellationToken ct);
+    Task<Result<BusinessDto>> CreateBusinessAsync(CreateBusinessDto createBusinessModel, CancellationToken ct);
 
-    Task<Result<BusinessDto>> GetBusinessAsync(GetBusinessRequestDto getBusinessModel, CancellationToken ct);
+    Task<Result<BusinessDto>> GetBusinessAsync(GetBusinessDto getBusinessModel, CancellationToken ct);
 
-    Task<Result> CreateRoleAsync(CreateRoleRequestDto createRoleModel, CancellationToken ct);
+    Task<Result<RoleDto>> CreateRoleAsync(CreateRoleDto createRoleModel, CancellationToken ct);
 
-    Task<Result> AddPermissionsToRole(AddPermissionsToRoleRequestDto addPermissionToRoleModel, CancellationToken ct);
+    Task<Result<RoleDto>> UpdateRoleAsync(UpdateRoleDto updateRoleModel, CancellationToken ct);
 
-    Task<Result> DeleteBusinessAsync(DeleteBusinessRequestDto deleteBusinessModel, CancellationToken ct);
+    Task<Result> DeleteRoleAsync(DeleteRoleDto deleteRoleModel, CancellationToken ct);
+
+    Task<Result> DeleteBusinessAsync(DeleteBusinessDto deleteBusinessModel, CancellationToken ct);
 }

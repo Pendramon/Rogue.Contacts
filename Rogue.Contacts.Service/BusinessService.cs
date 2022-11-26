@@ -1,5 +1,4 @@
-﻿using EnumsNET;
-using FluentValidation;
+﻿using FluentValidation;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
@@ -8,7 +7,6 @@ using Rogue.Contacts.Data;
 using Rogue.Contacts.Data.Model;
 using Rogue.Contacts.Service.Errors;
 using Rogue.Contacts.Service.Interfaces;
-using Rogue.Contacts.Shared.Models;
 using Rogue.Contacts.View.Model;
 
 namespace Rogue.Contacts.Service;
@@ -17,31 +15,34 @@ public sealed class BusinessService : IBusinessService
 {
     private readonly MongoContext context;
     private readonly IUserResolver userResolver;
-    private readonly IValidator<CreateBusinessRequestDto> createBusinessModelValidator;
-    private readonly IValidator<GetBusinessRequestDto> getBusinessModelValidator;
-    private readonly IValidator<CreateRoleRequestDto> createRoleModelValidator;
-    private readonly IValidator<AddPermissionsToRoleRequestDto> addPermissionToRoleModelValidator;
-    private readonly IValidator<DeleteBusinessRequestDto> deleteBusinessModelValidator;
+    private readonly IValidator<CreateBusinessDto> createBusinessModelValidator;
+    private readonly IValidator<GetBusinessDto> getBusinessModelValidator;
+    private readonly IValidator<CreateRoleDto> createRoleModelValidator;
+    private readonly IValidator<UpdateRoleDto> updateRoleModelValidator;
+    private readonly IValidator<DeleteRoleDto> deleteRoleModelValidator;
+    private readonly IValidator<DeleteBusinessDto> deleteBusinessModelValidator;
 
     public BusinessService(
         MongoContext context,
         IUserResolver userResolver,
-        IValidator<CreateBusinessRequestDto> createBusinessModelValidator,
-        IValidator<GetBusinessRequestDto> getBusinessModelValidator,
-        IValidator<CreateRoleRequestDto> createRoleModelValidator,
-        IValidator<AddPermissionsToRoleRequestDto> addPermissionToRoleModelValidator,
-        IValidator<DeleteBusinessRequestDto> deleteBusinessModelValidator)
+        IValidator<CreateBusinessDto> createBusinessModelValidator,
+        IValidator<GetBusinessDto> getBusinessModelValidator,
+        IValidator<CreateRoleDto> createRoleModelValidator,
+        IValidator<UpdateRoleDto> updateRoleModelValidator,
+        IValidator<DeleteRoleDto> deleteRoleModelValidator,
+        IValidator<DeleteBusinessDto> deleteBusinessModelValidator)
     {
         this.context = context;
         this.userResolver = userResolver;
         this.createBusinessModelValidator = createBusinessModelValidator;
         this.getBusinessModelValidator = getBusinessModelValidator;
         this.createRoleModelValidator = createRoleModelValidator;
-        this.addPermissionToRoleModelValidator = addPermissionToRoleModelValidator;
+        this.updateRoleModelValidator = updateRoleModelValidator;
+        this.deleteRoleModelValidator = deleteRoleModelValidator;
         this.deleteBusinessModelValidator = deleteBusinessModelValidator;
     }
 
-    public async Task<Result<BusinessDto>> CreateBusinessAsync(CreateBusinessRequestDto createBusinessModel, CancellationToken ct)
+    public async Task<Result<BusinessDto>> CreateBusinessAsync(CreateBusinessDto createBusinessModel, CancellationToken ct)
     {
         var validationResult = await createBusinessModelValidator.ValidateAsync(createBusinessModel, ct);
         if (!validationResult.IsValid)
@@ -53,7 +54,7 @@ public sealed class BusinessService : IBusinessService
         }
 
         var businessNameIsTaken = await context.Businesses.AsQueryable().AnyAsync(
-            b => b.Name == createBusinessModel.BusinessName && b.OwnerId == userResolver.GetUserId(), cancellationToken: ct);
+            b => b.Name == createBusinessModel.Name && b.OwnerId == userResolver.GetUserId(), cancellationToken: ct);
 
         if (businessNameIsTaken)
         {
@@ -63,14 +64,14 @@ public sealed class BusinessService : IBusinessService
         var businessOwner =
             await context.Users.AsQueryable().FirstOrDefaultAsync(u => u.Id == userResolver.GetUserId(), cancellationToken: ct);
 
-        var business = new Business(createBusinessModel.BusinessName, userResolver.GetUserId(), businessOwner.Username, DateTime.UtcNow, Array.Empty<Role>());
+        var business = new Business(createBusinessModel.Name, userResolver.GetUserId(), businessOwner.Username, DateTime.UtcNow, Array.Empty<Role>());
 
         await context.Businesses.InsertOneAsync(business, cancellationToken: ct);
 
-        return new BusinessDto(business.Name, business.OwnerUsername, business.CreatedAt, business.Roles.Select(r => new RoleDto(r.Name, r.Permissions)).ToList());
+        return new BusinessDto(business.OwnerUsername, business.Name, business.CreatedAt, business.Roles.Select(r => new RoleDto(r.Id.ToString(), r.Name, r.Permissions)).ToArray());
     }
 
-    public async Task<Result<BusinessDto>> GetBusinessAsync(GetBusinessRequestDto getBusinessModel, CancellationToken ct)
+    public async Task<Result<BusinessDto>> GetBusinessAsync(GetBusinessDto getBusinessModel, CancellationToken ct)
     {
         var validationResult = await getBusinessModelValidator.ValidateAsync(getBusinessModel, ct);
         if (!validationResult.IsValid)
@@ -81,38 +82,25 @@ public sealed class BusinessService : IBusinessService
                     .ToList());
         }
 
-        Business business;
-
-        if (getBusinessModel.BusinessId is not null)
-        {
-            business = await context.Businesses.AsQueryable()
-                .FirstOrDefaultAsync(b => b.Id == ObjectId.Parse(getBusinessModel.BusinessId), cancellationToken: ct);
-        }
-        else if (!string.IsNullOrWhiteSpace(getBusinessModel.OwnerUsername) && !string.IsNullOrWhiteSpace(getBusinessModel.BusinessName))
-        {
-            business = await context.Businesses.AsQueryable()
-                .FirstOrDefaultAsync(b => b.OwnerUsername == getBusinessModel.OwnerUsername && b.Name == getBusinessModel.BusinessName, cancellationToken: ct);
-        }
-        else
-        {
-            return new InvalidOperationError("Could not get business with the requested data as the data is either not distinctive or supported.");
-        }
+        var business = await context.Businesses.AsQueryable()
+            .FirstOrDefaultAsync(
+                b => b.OwnerUsername == getBusinessModel.Owner && b.Name == getBusinessModel.Name,
+                cancellationToken: ct);
 
         // TODO: Check if user has permission to see confidential client information for said business.
         if (business is null)
         {
-            return new NotFoundError($"The business was not found.");
+            return new NotFoundError("The business was not found.");
         }
 
         return new BusinessDto(
-            business.Name,
             business.OwnerUsername,
+            business.Name,
             business.CreatedAt,
-            business.Roles.Select(r => new RoleDto(r.Name, r.Permissions))
-                .ToList());
+            business.Roles.Select(r => new RoleDto(r.Id.ToString(), r.Name, r.Permissions)).ToArray());
     }
 
-    public async Task<Result> CreateRoleAsync(CreateRoleRequestDto createRoleModel, CancellationToken ct)
+    public async Task<Result<RoleDto>> CreateRoleAsync(CreateRoleDto createRoleModel, CancellationToken ct)
     {
         var validationResult = await createRoleModelValidator.ValidateAsync(createRoleModel, ct);
         if (!validationResult.IsValid)
@@ -124,7 +112,7 @@ public sealed class BusinessService : IBusinessService
         }
 
         var business = await context.Businesses.AsQueryable()
-            .FirstOrDefaultAsync(b => b.OwnerUsername == createRoleModel.Owner && b.Name == createRoleModel.BusinessName, cancellationToken: ct);
+            .FirstOrDefaultAsync(b => b.OwnerUsername == createRoleModel.Owner && b.Name == createRoleModel.Business, cancellationToken: ct);
 
         // TODO: Check if employee has permission to manage roles for said business.
         if (business is null || userResolver.GetUserId() != business.OwnerId)
@@ -132,32 +120,33 @@ public sealed class BusinessService : IBusinessService
             return new NotFoundError("The business was not found.");
         }
 
-        if (business.Roles.Any(r => r.Name == createRoleModel.RoleName))
+        if (business.Roles.Any(r => r.Name == createRoleModel.Name))
         {
             return new AlreadyExistsError("A role with this name already exists.");
         }
 
-        var update = Builders<Business>.Update.Push(b => b.Roles, new Role(createRoleModel.RoleName, Array.Empty<Permission>()));
+        var role = new Role(createRoleModel.Name, createRoleModel.Permissions?.ToArray());
+
+        var update = Builders<Business>.Update.Push(b => b.Roles, role);
         var result = await context.Businesses.UpdateOneAsync(x => x.Id == business.Id, update, cancellationToken: ct);
 
-        return result.IsAcknowledged ? Result.FromSuccess() : new InternalServerError();
+        return result.IsAcknowledged ? new RoleDto(role.Id.ToString(), role.Name, role.Permissions) : new InternalServerError();
     }
 
-    public async Task<Result> AddPermissionsToRole(
-        AddPermissionsToRoleRequestDto addPermissionsToRoleModel,
+    public async Task<Result<RoleDto>> UpdateRoleAsync(
+        UpdateRoleDto updateRoleModel,
         CancellationToken ct)
     {
-        var validationResult = await addPermissionToRoleModelValidator.ValidateAsync(addPermissionsToRoleModel, ct);
+        var validationResult = await updateRoleModelValidator.ValidateAsync(updateRoleModel, ct);
         if (!validationResult.IsValid)
         {
             return new AggregateError<ArgumentInvalidError>(
                 validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage)).ToList());
         }
 
         var business = await context.Businesses.AsQueryable()
-            .FirstOrDefaultAsync(b => b.OwnerUsername == addPermissionsToRoleModel.Owner && b.Name == addPermissionsToRoleModel.Business, cancellationToken: ct);
+            .FirstOrDefaultAsync(b => b.OwnerUsername == updateRoleModel.Owner && b.Name == updateRoleModel.Business, cancellationToken: ct);
 
         // TODO: Check if employee has permission to manage roles for said business.
         if (business is null || userResolver.GetUserId() != business.OwnerId)
@@ -165,7 +154,9 @@ public sealed class BusinessService : IBusinessService
             return new NotFoundError("The business was not found.");
         }
 
-        var role = business.Roles.FirstOrDefault(r => r.Name == addPermissionsToRoleModel.Role);
+        var roleId = ObjectId.Parse(updateRoleModel.RoleId);
+
+        var role = business.Roles.FirstOrDefault(r => r.Id == roleId);
 
         if (role is null)
         {
@@ -174,28 +165,62 @@ public sealed class BusinessService : IBusinessService
 
         var filterBuilder = Builders<Business>.Filter;
         var filter = filterBuilder.Eq(b => b.Id, business.Id) &
-                     filterBuilder.ElemMatch(b => b.Roles, r => r.Name == role.Name);
+                     filterBuilder.ElemMatch(b => b.Roles, r => r.Id == roleId);
 
-        var convertedPermissions = new List<Permission>();
-        foreach (var permission in addPermissionsToRoleModel.Permissions)
+        var updates = new List<UpdateDefinition<Business>>();
+
+        if (updateRoleModel.Name is not null)
         {
-            if (!Enums.TryToObject(permission, out Permission convertedPermission, EnumValidation.IsDefined))
-            {
-                return new AggregateError<ArgumentInvalidError>(new ArgumentInvalidError(
-                    nameof(addPermissionsToRoleModel.Permissions),
-                    $"{permission} is not a valid permission."));
-            }
-
-            convertedPermissions.Add(convertedPermission);
+            updates.Add(Builders<Business>.Update.Set(b => b.Roles[-1].Name, updateRoleModel.Name));
         }
 
-        var update = Builders<Business>.Update.AddToSetEach(b => b.Roles[-1].Permissions, convertedPermissions);
+        if (updateRoleModel.Permissions is not null)
+        {
+            updates.Add(Builders<Business>.Update.Set(b => b.Roles[-1].Permissions, updateRoleModel.Permissions));
+        }
+
+        var update = Builders<Business>.Update.Combine(updates);
+        var result = await context.Businesses.UpdateOneAsync(filter, update, cancellationToken: ct);
+
+        return result.IsAcknowledged ? new RoleDto(role.Id.ToString(), updateRoleModel.Name ?? role.Name, updateRoleModel.Permissions ?? role.Permissions) : new InternalServerError();
+    }
+
+    public async Task<Result> DeleteRoleAsync(DeleteRoleDto deleteRoleModel, CancellationToken ct)
+    {
+        var validationResult = await deleteRoleModelValidator.ValidateAsync(deleteRoleModel, ct);
+        if (!validationResult.IsValid)
+        {
+            return new AggregateError<ArgumentInvalidError>(
+                validationResult.Errors
+                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
+                    .ToList());
+        }
+
+        var business = await context.Businesses.AsQueryable().FirstOrDefaultAsync(
+            b => b.OwnerUsername == deleteRoleModel.Owner && b.Name == deleteRoleModel.Business, cancellationToken: ct);
+
+        // TODO: Check if employee has permission to manage roles for said business.
+        if (business is null || userResolver.GetUserId() != business.OwnerId)
+        {
+            return new NotFoundError("The business was not found.");
+        }
+
+        var roleId = ObjectId.Parse(deleteRoleModel.RoleId);
+
+        if (business.Roles.All(r => r.Id != roleId))
+        {
+            return new NotFoundError("The role was not found.");
+        }
+
+        var filter = Builders<Business>.Filter.Eq(b => b.Id, business.Id);
+        var update = Builders<Business>.Update.PullFilter(b => b.Roles, r => r.Id == roleId);
+
         var result = await context.Businesses.UpdateOneAsync(filter, update, cancellationToken: ct);
 
         return result.IsAcknowledged ? Result.FromSuccess() : new InternalServerError();
     }
 
-    public async Task<Result> DeleteBusinessAsync(DeleteBusinessRequestDto deleteBusinessModel, CancellationToken ct)
+    public async Task<Result> DeleteBusinessAsync(DeleteBusinessDto deleteBusinessModel, CancellationToken ct)
     {
         var validationResult = await deleteBusinessModelValidator.ValidateAsync(deleteBusinessModel, ct);
         if (!validationResult.IsValid)
@@ -206,11 +231,12 @@ public sealed class BusinessService : IBusinessService
                     .ToList());
         }
 
-        var businessExists = await context.Businesses.AsQueryable().AnyAsync(b => b.OwnerUsername == deleteBusinessModel.Owner && b.Name == deleteBusinessModel.Business, cancellationToken: ct);
+        var business = await context.Businesses.AsQueryable().FirstOrDefaultAsync(b => b.OwnerUsername == deleteBusinessModel.Owner && b.Name == deleteBusinessModel.Business, cancellationToken: ct);
 
-        if (!businessExists)
+        // TODO: Send different message if user can view business.
+        if (business is null || userResolver.GetUserId() != business.OwnerId)
         {
-            return new NotFoundError($"The business was not found.");
+            return new NotFoundError("The business was not found.");
         }
 
         var deleteResult = await context.Businesses.DeleteOneAsync(

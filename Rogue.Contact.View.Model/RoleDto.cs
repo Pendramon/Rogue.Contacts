@@ -1,5 +1,3 @@
-﻿using Rogue.Contacts.Shared.Models;
+﻿namespace Rogue.Contacts.View.Model;
 
-namespace Rogue.Contacts.View.Model;
-
-public record RoleDto(string Name, Permission[] Permissions);
+public sealed record RoleDto(string Id, string Name, IEnumerable<string> Permissions);

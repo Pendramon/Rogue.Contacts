@@ -22,10 +22,10 @@ public class UserService : IUserService
     private readonly MongoContext context;
     private readonly IConfiguration configuration;
     private readonly IHashService hashService;
-    private readonly IValidator<UserRegisterRequestDto> userRegisterModelValidator;
-    private readonly IValidator<UserLoginRequestDto> userLoginModelValidator;
+    private readonly IValidator<UserRegisterDto> userRegisterModelValidator;
+    private readonly IValidator<UserLoginDto> userLoginModelValidator;
 
-    public UserService(MongoContext context, IConfiguration configuration, IHashService hashService, IValidator<UserRegisterRequestDto> userRegisterModelValidator, IValidator<UserLoginRequestDto> userLoginModelValidator)
+    public UserService(MongoContext context, IConfiguration configuration, IHashService hashService, IValidator<UserRegisterDto> userRegisterModelValidator, IValidator<UserLoginDto> userLoginModelValidator)
     {
         this.context = context;
         this.configuration = configuration;
@@ -34,7 +34,7 @@ public class UserService : IUserService
         this.userLoginModelValidator = userLoginModelValidator;
     }
 
-    public async Task<Result<AuthenticationResult>> RegisterAsync(UserRegisterRequestDto userRegisterModel, CancellationToken ct = default)
+    public async Task<Result<AuthenticationResult>> RegisterAsync(UserRegisterDto userRegisterModel, CancellationToken ct = default)
     {
         var validationResult = await this.userRegisterModelValidator.ValidateAsync(userRegisterModel, ct);
         if (!validationResult.IsValid)
@@ -72,10 +72,10 @@ public class UserService : IUserService
 
         await this.context.Users.InsertOneAsync(user, cancellationToken: ct);
 
-        return new AuthenticationResult(this.GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt));
+        return new AuthenticationResult(this.GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
     }
 
-    public async Task<Result<AuthenticationResult>> LoginAsync(UserLoginRequestDto userLoginModel, CancellationToken ct = default)
+    public async Task<Result<AuthenticationResult>> LoginAsync(UserLoginDto userLoginModel, CancellationToken ct = default)
     {
         var validationResult = await this.userLoginModelValidator.ValidateAsync(userLoginModel, ct);
         if (!validationResult.IsValid)
@@ -108,7 +108,7 @@ public class UserService : IUserService
             await context.Users.FindOneAndUpdateAsync(u => u.Id == user.Id, Builders<User>.Update.Set(u => u.PasswordHash, user.PasswordHash), cancellationToken: ct);
         }
 
-        return new AuthenticationResult(this.GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt));
+        return new AuthenticationResult(this.GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
     }
 
     private string GenerateToken(User user)

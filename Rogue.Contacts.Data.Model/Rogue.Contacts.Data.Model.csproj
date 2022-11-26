@@ -14,8 +14,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Rogue.Contacts.Shared.Models\Rogue.Contacts.Shared.Models.csproj" />
-  </ItemGroup>
-
 </Project>

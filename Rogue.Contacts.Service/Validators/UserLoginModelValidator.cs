@@ -3,7 +3,7 @@ using Rogue.Contacts.View.Model;
 
 namespace Rogue.Contacts.Service.Validators;
 
-public sealed class UserLoginModelValidator : AbstractValidator<UserLoginRequestDto>
+public sealed class UserLoginModelValidator : AbstractValidator<UserLoginDto>
 {
     public UserLoginModelValidator()
     {

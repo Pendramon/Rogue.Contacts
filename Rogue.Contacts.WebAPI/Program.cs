@@ -2,7 +2,6 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
 using Rogue.Contacts.Service.DI;
 using Rogue.Contacts.Service.Interfaces;
@@ -70,7 +69,8 @@ if (app.Environment.IsDevelopment())
     {
         foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
         {
-            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
+            options.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json",
                 description.ApiVersion.ToString());
         }
     });

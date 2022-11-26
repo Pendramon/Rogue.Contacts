@@ -5,7 +5,7 @@ namespace Rogue.Contacts.Service.Interfaces;
 
 public interface IUserService
 {
-    Task<Result<AuthenticationResult>> RegisterAsync(UserRegisterRequestDto userRegisterModel, CancellationToken ct = default);
+    Task<Result<AuthenticationResult>> RegisterAsync(UserRegisterDto userRegisterModel, CancellationToken ct = default);
 
-    Task<Result<AuthenticationResult>> LoginAsync(UserLoginRequestDto userLoginModel, CancellationToken ct = default);
+    Task<Result<AuthenticationResult>> LoginAsync(UserLoginDto userLoginModel, CancellationToken ct = default);
 }
