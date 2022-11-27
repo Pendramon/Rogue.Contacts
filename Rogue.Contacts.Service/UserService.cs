@@ -3,10 +3,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using MongoDB.Driver;
-using MongoDB.Driver.Linq;
 using Remora.Results;
 using Rogue.Contacts.Data;
 using Rogue.Contacts.Data.Model;
@@ -19,13 +18,13 @@ namespace Rogue.Contacts.Service;
 
 public class UserService : IUserService
 {
-    private readonly MongoContext context;
+    private readonly ContactsContext context;
     private readonly IConfiguration configuration;
     private readonly IHashService hashService;
     private readonly IValidator<UserRegisterDto> userRegisterModelValidator;
     private readonly IValidator<UserLoginDto> userLoginModelValidator;
 
-    public UserService(MongoContext context, IConfiguration configuration, IHashService hashService, IValidator<UserRegisterDto> userRegisterModelValidator, IValidator<UserLoginDto> userLoginModelValidator)
+    public UserService(ContactsContext context, IConfiguration configuration, IHashService hashService, IValidator<UserRegisterDto> userRegisterModelValidator, IValidator<UserLoginDto> userLoginModelValidator)
     {
         this.context = context;
         this.configuration = configuration;
@@ -36,13 +35,13 @@ public class UserService : IUserService
 
     public async Task<Result<AuthenticationResult>> RegisterAsync(UserRegisterDto userRegisterModel, CancellationToken ct = default)
     {
-        var validationResult = await this.userRegisterModelValidator.ValidateAsync(userRegisterModel, ct);
+        var validationResult = await userRegisterModelValidator.ValidateAsync(userRegisterModel, ct);
         if (!validationResult.IsValid)
         {
             return new AggregateError<ArgumentInvalidError>(validationResult.Errors.Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage)).ToList());
         }
 
-        var users = await context.Users.AsQueryable().Where(u =>
+        var users = await context.Users.Where(u =>
             u.Username.ToLower() == userRegisterModel.Username.ToLower() ||
             u.Email.ToLower() == userRegisterModel.Email.ToLower()).ToListAsync(ct);
 
@@ -67,17 +66,18 @@ public class UserService : IUserService
             userRegisterModel.Username,
             userRegisterModel.DisplayName,
             userRegisterModel.Email.ToLower(),
-            await this.hashService.ComputeHashAsync(userRegisterModel.Password),
+            await hashService.ComputeHashAsync(userRegisterModel.Password),
             DateTime.Now);
 
-        await this.context.Users.InsertOneAsync(user, cancellationToken: ct);
+        context.Add(user);
+        await context.SaveChangesAsync(ct);
 
-        return new AuthenticationResult(this.GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
+        return new AuthenticationResult(GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
     }
 
     public async Task<Result<AuthenticationResult>> LoginAsync(UserLoginDto userLoginModel, CancellationToken ct = default)
     {
-        var validationResult = await this.userLoginModelValidator.ValidateAsync(userLoginModel, ct);
+        var validationResult = await userLoginModelValidator.ValidateAsync(userLoginModel, ct);
         if (!validationResult.IsValid)
         {
             return new AggregateError<ArgumentInvalidError>(
@@ -87,15 +87,15 @@ public class UserService : IUserService
         }
 
         var user = new EmailAddressAttribute().IsValid(userLoginModel.UsernameOrEmail)
-            ? await context.Users.AsQueryable().FirstOrDefaultAsync(u => u.Email.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct)
-            : await context.Users.AsQueryable().FirstOrDefaultAsync(u => u.Username.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct);
+            ? await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct)
+            : await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct);
 
         if (user == null)
         {
             return new AggregateError<ArgumentInvalidError>(new ArgumentInvalidError("UsernameOrEmail", "The account does not exist."));
         }
 
-        var result = await this.hashService.CompareHashAsync(userLoginModel.Password, user.PasswordHash);
+        var result = await hashService.CompareHashAsync(userLoginModel.Password, user.PasswordHash);
 
         if (!result.Match)
         {
@@ -105,15 +105,16 @@ public class UserService : IUserService
         if (result.Rehashed)
         {
             user.PasswordHash = result.RehashResult!;
-            await context.Users.FindOneAndUpdateAsync(u => u.Id == user.Id, Builders<User>.Update.Set(u => u.PasswordHash, user.PasswordHash), cancellationToken: ct);
+            context.Users.Update(user);
+            await context.SaveChangesAsync(ct);
         }
 
-        return new AuthenticationResult(this.GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
+        return new AuthenticationResult(GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
     }
 
     private string GenerateToken(User user)
     {
-        var symmetricKey = Encoding.ASCII.GetBytes(this.configuration["Jwt:Secret"]);
+        var symmetricKey = Encoding.ASCII.GetBytes(configuration["Jwt:Secret"]);
         var tokenHandler = new JwtSecurityTokenHandler();
 
         var now = DateTime.UtcNow;
