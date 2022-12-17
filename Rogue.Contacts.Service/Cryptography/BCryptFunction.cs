@@ -72,7 +72,7 @@ public sealed class BCryptFunction : IHashFunction
             return false;
         }
 
-        // Validate workfactor
+        // Validate work factor
         if (!IsAsciiNumeric(hash[offset++])
             || !IsAsciiNumeric(hash[offset++]))
         {

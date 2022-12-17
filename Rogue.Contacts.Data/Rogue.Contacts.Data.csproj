@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.18.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.0" />
     <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.435">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -17,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Rogue.Contacts.Data.Model\Rogue.Contacts.Data.Model.csproj" />
+    <ProjectReference Include="..\Rogue.Contacts.Shared\Rogue.Contacts.Shared.csproj" />
   </ItemGroup>
 
 </Project>

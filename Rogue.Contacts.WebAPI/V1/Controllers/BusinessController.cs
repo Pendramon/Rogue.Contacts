@@ -51,7 +51,6 @@ public sealed class BusinessController : ControllerBase
             return getBusinessResult.Error switch
             {
                 AggregateError<ArgumentInvalidError> error => BadRequest(error),
-                InvalidOperationError error => BadRequest(error),
                 NotFoundError error => NotFound(error),
                 _ => StatusCode(500),
             };
@@ -63,9 +62,9 @@ public sealed class BusinessController : ControllerBase
     [HttpPost]
     [Route("{owner}/{business}/roles")]
     [Authorize]
-    public async Task<IActionResult> CreateRoleAsync(string owner, string business, [FromBody] CreateRoleRequestDto model, CancellationToken ct)
+    public async Task<IActionResult> CreateRoleAsync(string owner, string business, [FromBody] CreateBusinessRoleRequestDto model, CancellationToken ct)
     {
-        var createRoleResult = await businessService.CreateRoleAsync(new CreateRoleDto(owner, business, model.Name, model.Permissions), ct);
+        var createRoleResult = await businessService.CreateRoleAsync(new CreateBusinessRoleDto(owner, business, model.Name, model.Permissions), ct);
 
         if (!createRoleResult.IsSuccess)
         {
@@ -73,7 +72,8 @@ public sealed class BusinessController : ControllerBase
             {
                 AggregateError<ArgumentInvalidError> error => BadRequest(error),
                 NotFoundError error => NotFound(error),
-                AlreadyExistsError error => Conflict(error),
+                ForbiddenError error => Forbid(),
+                ArgumentConflictError error => StatusCode(403, error),
                 _ => StatusCode(500),
             };
         }
@@ -81,12 +81,33 @@ public sealed class BusinessController : ControllerBase
         return StatusCode(201, createRoleResult.Entity);
     }
 
-    [HttpPatch]
-    [Route("{owner}/{business}/roles/{roleId}")]
+    [HttpGet]
+    [Route("{owner}/{business}/roles")]
     [Authorize]
-    public async Task<IActionResult> UpdateRoleAsync(string owner, string business, string roleId, [FromBody] UpdateRoleRequestDto model, CancellationToken ct)
+    public async Task<IActionResult> GetAllRolesAsync(string owner, string business, CancellationToken ct)
     {
-        var addPermissionsResult = await businessService.UpdateRoleAsync(new UpdateRoleDto(owner, business, roleId, model.Name, model.Permissions), ct);
+        var getBusinessResult = await businessService.GetAllRolesAsync(new GetAllBusinessRolesDto(owner, business), ct);
+
+        if (!getBusinessResult.IsSuccess)
+        {
+            return getBusinessResult.Error switch
+            {
+                AggregateError<ArgumentInvalidError> error => BadRequest(error),
+                NotFoundError error => NotFound(error),
+                ForbiddenError error => StatusCode(403, error),
+                _ => StatusCode(500),
+            };
+        }
+
+        return Ok(getBusinessResult.Entity);
+    }
+
+    [HttpPatch]
+    [Route("{owner}/{business}/roles/{roleId:int}")]
+    [Authorize]
+    public async Task<IActionResult> UpdateRoleAsync(string owner, string business, int roleId, [FromBody] UpdateBusinessRoleRequestDto model, CancellationToken ct)
+    {
+        var addPermissionsResult = await businessService.UpdateRoleAsync(new UpdateBusinessRoleDto(owner, business, roleId, model.Name, model.Permissions), ct);
 
         if (!addPermissionsResult.IsSuccess)
         {
@@ -94,6 +115,7 @@ public sealed class BusinessController : ControllerBase
             {
                 AggregateError<ArgumentInvalidError> error => BadRequest(error),
                 NotFoundError error => NotFound(error),
+                ForbiddenError error => StatusCode(403, error),
                 _ => StatusCode(500),
             };
         }
@@ -102,11 +124,11 @@ public sealed class BusinessController : ControllerBase
     }
 
     [HttpDelete]
-    [Route("{owner}/{business}/roles/{roleId}")]
+    [Route("{owner}/{business}/roles/{roleId:int}")]
     [Authorize]
-    public async Task<IActionResult> DeleteRoleAsync(string owner, string business, string roleId, CancellationToken ct)
+    public async Task<IActionResult> DeleteRoleAsync(string owner, string business, int roleId, CancellationToken ct)
     {
-        var deleteResult = await businessService.DeleteRoleAsync(new DeleteRoleDto(owner, business, roleId), ct);
+        var deleteResult = await businessService.DeleteRoleAsync(new DeleteBusinessRoleDto(owner, business, roleId), ct);
 
         if (!deleteResult.IsSuccess)
         {
@@ -114,6 +136,7 @@ public sealed class BusinessController : ControllerBase
             {
                 AggregateError<ArgumentInvalidError> error => BadRequest(error),
                 NotFoundError error => NotFound(error),
+                ForbiddenError error => StatusCode(403, error),
                 _ => StatusCode(500),
             };
         }
@@ -134,6 +157,7 @@ public sealed class BusinessController : ControllerBase
             {
                 AggregateError<ArgumentInvalidError> error => BadRequest(error),
                 NotFoundError error => NotFound(error),
+                ForbiddenError error => StatusCode(403, error),
                 _ => StatusCode(500),
             };
         }

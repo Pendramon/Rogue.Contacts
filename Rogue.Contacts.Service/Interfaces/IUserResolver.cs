@@ -1,9 +1,7 @@
-﻿using MongoDB.Bson;
-
-namespace Rogue.Contacts.Service.Interfaces
+﻿namespace Rogue.Contacts.Service.Interfaces
 {
     public interface IUserResolver
     {
-        public ObjectId GetUserId();
+        public int GetUserId();
     }
 }

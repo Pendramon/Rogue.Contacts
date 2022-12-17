@@ -2,7 +2,9 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Rogue.Contacts.Data;
 using Rogue.Contacts.Service.DI;
 using Rogue.Contacts.Service.Interfaces;
 using Rogue.Contacts.WebAPI;
@@ -11,6 +13,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddDbContext<ContactsContext>(options =>
+{
+    options.UseNpgsql(builder.Configuration["RogueContacts:ConnectionString"]);
+    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+#if DEBUG
+    options.LogTo(_ => { }, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information);
+#endif
+});
 builder.Services.AddSingleton<IUserResolver, UserResolver>();
 builder.Services.AddRogueContacts();
 
