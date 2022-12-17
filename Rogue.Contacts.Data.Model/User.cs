@@ -1,30 +1,14 @@
-﻿using MongoDB.Bson;
+﻿namespace Rogue.Contacts.Data.Model;
 
-namespace Rogue.Contacts.Data.Model;
-
-public sealed class User
+public sealed class User : Party
 {
-    public User(string username, string displayName, string email, string passwordHash, DateTime createdAt, ObjectId[]? roles = default)
-    {
-        Username = username;
-        DisplayName = displayName;
-        Email = email;
-        PasswordHash = passwordHash;
-        CreatedAt = createdAt;
-        Roles = roles ?? Array.Empty<ObjectId>();
-    }
+    required public string DisplayName { get; set; }
 
-    public ObjectId Id { get; set; }
+    required public string Email { get; set; }
 
-    public string Username { get; set; }
+    required public string PasswordHash { get; set; }
 
-    public string DisplayName { get; set; }
+    public ICollection<UserBusinessRole> UserBusinessRoles { get; set; } = null!;
 
-    public string Email { get; set; }
-
-    public string PasswordHash { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public ObjectId[] Roles { get; set; }
+    public ICollection<UserOrganizationRole> UserOrganizationRoles { get; set; } = null!;
 }

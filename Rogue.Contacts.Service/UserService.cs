@@ -42,12 +42,12 @@ public class UserService : IUserService
         }
 
         var users = await context.Users.Where(u =>
-            u.Username.ToLower() == userRegisterModel.Username.ToLower() ||
+            u.Name.ToLower() == userRegisterModel.Username.ToLower() ||
             u.Email.ToLower() == userRegisterModel.Email.ToLower()).ToListAsync(ct);
 
         var errors = new List<ArgumentConflictError>();
 
-        if (users.Any(u => string.Equals(u.Username, userRegisterModel.Username, StringComparison.CurrentCultureIgnoreCase)))
+        if (users.Any(u => string.Equals(u.Name, userRegisterModel.Username, StringComparison.CurrentCultureIgnoreCase)))
         {
             errors.Add(new ArgumentConflictError("Username", "User with this username already exists."));
         }
@@ -62,17 +62,19 @@ public class UserService : IUserService
             return new AggregateError<ArgumentConflictError>(errors);
         }
 
-        var user = new User(
-            userRegisterModel.Username,
-            userRegisterModel.DisplayName,
-            userRegisterModel.Email.ToLower(),
-            await hashService.ComputeHashAsync(userRegisterModel.Password),
-            DateTime.Now);
+        var user = new User
+        {
+            Name = userRegisterModel.Username,
+            DisplayName = userRegisterModel.DisplayName,
+            Email = userRegisterModel.Email.ToLower(),
+            PasswordHash = await hashService.ComputeHashAsync(userRegisterModel.Password),
+            CreatedAt = DateTime.UtcNow,
+        };
 
         context.Add(user);
         await context.SaveChangesAsync(ct);
 
-        return new AuthenticationResult(GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
+        return new AuthenticationResult(GenerateToken(user), new UserDto(user.Name, user.DisplayName, user.Email, user.CreatedAt));
     }
 
     public async Task<Result<AuthenticationResult>> LoginAsync(UserLoginDto userLoginModel, CancellationToken ct = default)
@@ -88,7 +90,7 @@ public class UserService : IUserService
 
         var user = new EmailAddressAttribute().IsValid(userLoginModel.UsernameOrEmail)
             ? await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct)
-            : await context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct);
+            : await context.Users.FirstOrDefaultAsync(u => u.Name.ToLower() == userLoginModel.UsernameOrEmail.ToLower(), ct);
 
         if (user == null)
         {
@@ -109,7 +111,7 @@ public class UserService : IUserService
             await context.SaveChangesAsync(ct);
         }
 
-        return new AuthenticationResult(GenerateToken(user), new UserDto(user.Username, user.DisplayName, user.Email, user.CreatedAt, user.Roles.Select(roleId => roleId.ToString())));
+        return new AuthenticationResult(GenerateToken(user), new UserDto(user.Name, user.DisplayName, user.Email, user.CreatedAt));
     }
 
     private string GenerateToken(User user)

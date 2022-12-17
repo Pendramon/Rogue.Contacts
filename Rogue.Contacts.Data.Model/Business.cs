@@ -1,27 +1,16 @@
-﻿using MongoDB.Bson;
-
-namespace Rogue.Contacts.Data.Model;
+﻿namespace Rogue.Contacts.Data.Model;
 
 public sealed class Business
 {
-    public Business(string name, ObjectId ownerId, string ownerUsername, DateTime createdAt, Role[] roles)
-    {
-        Name = name;
-        OwnerId = ownerId;
-        OwnerUsername = ownerUsername;
-        CreatedAt = createdAt;
-        Roles = roles;
-    }
+    public int Id { get; set; }
 
-    public ObjectId Id { get; set; }
+    public int OwnerId { get; set; }
 
-    public string Name { get; set; }
+    public Party Owner { get; set; } = null!;
 
-    public ObjectId OwnerId { get; set; }
+    required public string Name { get; set; }
 
-    public string OwnerUsername { get; set; }
+    required public DateTime CreatedAt { get; set; }
 
-    public DateTime CreatedAt { get; set; }
-
-    public Role[] Roles { get; set; }
+    public ICollection<BusinessRole> BusinessRoles { get; set; } = null!;
 }
