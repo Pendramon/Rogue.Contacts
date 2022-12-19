@@ -5,7 +5,7 @@ using Rogue.Contacts.Shared;
 
 namespace Rogue.Contacts.Service;
 
-public class OrganizationAuthorizationService
+public sealed class OrganizationAuthorizationService
 {
     private readonly ContactsContext context;
     private readonly IUserResolver userResolver;

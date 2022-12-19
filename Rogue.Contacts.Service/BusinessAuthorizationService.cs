@@ -6,7 +6,7 @@ using Rogue.Contacts.Shared;
 namespace Rogue.Contacts.Service;
 
 // TODO: Come up with a better way of handling permission check.
-public class BusinessAuthorizationService
+public sealed class BusinessAuthorizationService
 {
     private readonly ContactsContext context;
     private readonly IUserResolver userResolver;

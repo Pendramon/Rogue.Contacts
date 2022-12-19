@@ -16,7 +16,7 @@ using Rogue.Contacts.View.Model;
 
 namespace Rogue.Contacts.Service;
 
-public class UserService : IUserService
+public sealed class UserService : IUserService
 {
     private readonly ContactsContext context;
     private readonly IConfiguration configuration;
