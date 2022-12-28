@@ -2,7 +2,7 @@
 
 ## PLEASE READ
 
-The project was scrapped due to the size of the application scope and the time needed to finish it. 
+The project was scrapped due to the size of the application scope and the time needed to finish it.  
 But non the less, I have learned a lot from it which was the initial intention when starting the project.
 
 ### There are a couple of problems with the code base:
@@ -24,7 +24,7 @@ There are a few solutions I could have done to improve this:
 - Additionally If I wanted to I could have used MediatR library to implement middleware in the service layer and used pipelines for both validation and authorization which would get rid of all repetitive validation and permission checking code inside the service methods.
 
 Third issue that I have found out is the fact that Web Api layer should have its own dtos for the parameters from body.  
-The parameters in an endpoint could come from multiple points, for example from the url query parameters, from the body or from the header to maintain consistency on body parameters through out all endpoints I should create a dto containing the body even if there is only 1 property in them.  
+The parameters in an endpoint could come from multiple points, for example from the url query parameters, from the body or from the header. To maintain consistency on body parameters through out all endpoints I should create a dto containing the body, even if there is only 1 property in them so that all requests expect a object inside the body containing the paramaters.  
 Another reason it should have its own dtos is the aspect of versioning, Web Api endpoints should not change. If I changed a dto in the service layer that would essentially change the endpoints if I am re-using the same dtos from the service layer.
 
 ## Conclusion
