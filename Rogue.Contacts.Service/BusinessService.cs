@@ -1,5 +1,4 @@
 ﻿using FastEnumUtility;
-using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Remora.Results;
 using Rogue.Contacts.Data;
@@ -22,49 +21,28 @@ public sealed class BusinessService : IBusinessService
     private readonly IUserResolver userResolver;
     private readonly BusinessAuthorizationService businessAuthorizationService;
     private readonly OrganizationAuthorizationService organizationAuthorizationService;
-    private readonly IValidator<CreateBusinessDto> createBusinessModelValidator;
-    private readonly IValidator<GetBusinessDto> getBusinessModelValidator;
-    private readonly IValidator<GetAllBusinessRolesDto> getAllRolesModelValidator;
-    private readonly IValidator<CreateBusinessRoleDto> createRoleModelValidator;
-    private readonly IValidator<UpdateBusinessRoleDto> updateRoleModelValidator;
-    private readonly IValidator<DeleteBusinessRoleDto> deleteRoleModelValidator;
-    private readonly IValidator<DeleteBusinessDto> deleteBusinessModelValidator;
+    private readonly IValidationService validationService;
 
     public BusinessService(
         ContactsContext context,
         IUserResolver userResolver,
         BusinessAuthorizationService businessAuthorizationService,
         OrganizationAuthorizationService organizationAuthorizationService,
-        IValidator<CreateBusinessDto> createBusinessModelValidator,
-        IValidator<GetBusinessDto> getBusinessModelValidator,
-        IValidator<GetAllBusinessRolesDto> getAllRolesModelValidator,
-        IValidator<CreateBusinessRoleDto> createRoleModelValidator,
-        IValidator<UpdateBusinessRoleDto> updateRoleModelValidator,
-        IValidator<DeleteBusinessRoleDto> deleteRoleModelValidator,
-        IValidator<DeleteBusinessDto> deleteBusinessModelValidator)
+        IValidationService validationService)
     {
         this.context = context;
         this.userResolver = userResolver;
         this.businessAuthorizationService = businessAuthorizationService;
         this.organizationAuthorizationService = organizationAuthorizationService;
-        this.createBusinessModelValidator = createBusinessModelValidator;
-        this.getBusinessModelValidator = getBusinessModelValidator;
-        this.getAllRolesModelValidator = getAllRolesModelValidator;
-        this.createRoleModelValidator = createRoleModelValidator;
-        this.updateRoleModelValidator = updateRoleModelValidator;
-        this.deleteRoleModelValidator = deleteRoleModelValidator;
-        this.deleteBusinessModelValidator = deleteBusinessModelValidator;
+        this.validationService = validationService;
     }
 
     public async Task<Result<BusinessDto>> CreateBusinessAsync(CreateBusinessDto createBusinessModel, CancellationToken ct = default)
     {
-        var validationResult = await createBusinessModelValidator.ValidateAsync(createBusinessModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(createBusinessModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var ownerId = userResolver.GetUserId();
@@ -97,13 +75,10 @@ public sealed class BusinessService : IBusinessService
 
     public async Task<Result<BusinessDto>> GetBusinessAsync(GetBusinessDto getBusinessModel, CancellationToken ct = default)
     {
-        var validationResult = await getBusinessModelValidator.ValidateAsync(getBusinessModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(getBusinessModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var queryResult = await context.Businesses.Select(b => new
@@ -132,13 +107,10 @@ public sealed class BusinessService : IBusinessService
 
     public async Task<Result> DeleteBusinessAsync(DeleteBusinessDto deleteBusinessModel, CancellationToken ct = default)
     {
-        var validationResult = await deleteBusinessModelValidator.ValidateAsync(deleteBusinessModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(deleteBusinessModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var business = await context.Businesses.Select(b => new
@@ -187,13 +159,10 @@ public sealed class BusinessService : IBusinessService
 
     public async Task<Result<BusinessRoleDto>> CreateRoleAsync(CreateBusinessRoleDto createRoleModel, CancellationToken ct = default)
     {
-        var validationResult = await createRoleModelValidator.ValidateAsync(createRoleModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(createRoleModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var business = await context.Businesses.Select(b => new
@@ -262,13 +231,10 @@ public sealed class BusinessService : IBusinessService
 
     public async Task<Result<IEnumerable<BusinessRoleDto>>> GetAllRolesAsync(GetAllBusinessRolesDto getAllRolesModel, CancellationToken ct = default)
     {
-        var validationResult = await getAllRolesModelValidator.ValidateAsync(getAllRolesModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(getAllRolesModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var business = await context.Businesses.Select(b => new
@@ -307,17 +273,12 @@ public sealed class BusinessService : IBusinessService
         return business.BusinessRoles.Select(br => new BusinessRoleDto(br.Id, br.Name, br.Permissions)).ToList();
     }
 
-    public async Task<Result<BusinessRoleDto>> UpdateRoleAsync(
-        UpdateBusinessRoleDto updateRoleModel,
-        CancellationToken ct = default)
+    public async Task<Result<BusinessRoleDto>> UpdateRoleAsync(UpdateBusinessRoleDto updateRoleModel, CancellationToken ct = default)
     {
-        var validationResult = await updateRoleModelValidator.ValidateAsync(updateRoleModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(updateRoleModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var queryResult = await context.Businesses.AsTracking().Select(b => new
@@ -383,13 +344,10 @@ public sealed class BusinessService : IBusinessService
 
     public async Task<Result> DeleteRoleAsync(DeleteBusinessRoleDto deleteRoleModel, CancellationToken ct = default)
     {
-        var validationResult = await deleteRoleModelValidator.ValidateAsync(deleteRoleModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(deleteRoleModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var queryResult = await context.BusinessRoles.Select(br => new

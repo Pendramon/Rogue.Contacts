@@ -2,7 +2,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -21,24 +20,22 @@ public sealed class UserService : IUserService
     private readonly ContactsContext context;
     private readonly IConfiguration configuration;
     private readonly IHashService hashService;
-    private readonly IValidator<UserRegisterDto> userRegisterModelValidator;
-    private readonly IValidator<UserLoginDto> userLoginModelValidator;
+    private readonly IValidationService validationService;
 
-    public UserService(ContactsContext context, IConfiguration configuration, IHashService hashService, IValidator<UserRegisterDto> userRegisterModelValidator, IValidator<UserLoginDto> userLoginModelValidator)
+    public UserService(ContactsContext context, IConfiguration configuration, IHashService hashService, IValidationService validationService)
     {
         this.context = context;
         this.configuration = configuration;
         this.hashService = hashService;
-        this.userRegisterModelValidator = userRegisterModelValidator;
-        this.userLoginModelValidator = userLoginModelValidator;
+        this.validationService = validationService;
     }
 
     public async Task<Result<AuthenticationResult>> RegisterAsync(UserRegisterDto userRegisterModel, CancellationToken ct = default)
     {
-        var validationResult = await userRegisterModelValidator.ValidateAsync(userRegisterModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(userRegisterModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(validationResult.Errors.Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage)).ToList());
+            return validationErrors;
         }
 
         var users = await context.Users.Where(u =>
@@ -79,13 +76,10 @@ public sealed class UserService : IUserService
 
     public async Task<Result<AuthenticationResult>> LoginAsync(UserLoginDto userLoginModel, CancellationToken ct = default)
     {
-        var validationResult = await userLoginModelValidator.ValidateAsync(userLoginModel, ct);
-        if (!validationResult.IsValid)
+        var validationErrors = await validationService.ValidateAsync(userLoginModel, ct);
+        if (validationErrors is not null)
         {
-            return new AggregateError<ArgumentInvalidError>(
-                validationResult.Errors
-                    .Select(e => new ArgumentInvalidError(e.PropertyName, e.ErrorMessage))
-                    .ToList());
+            return validationErrors;
         }
 
         var user = new EmailAddressAttribute().IsValid(userLoginModel.UsernameOrEmail)

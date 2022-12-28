@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<UpdateBusinessRoleDto>, UpdateBusinessRoleModelValidator>();
         services.AddScoped<IValidator<DeleteBusinessRoleDto>, DeleteBusinessRoleModelValidator>();
         services.AddScoped<IValidator<DeleteBusinessDto>, DeleteBusinessModelValidator>();
+        services.AddScoped<IValidationService, ValidationService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IBusinessService, BusinessService>();
 
